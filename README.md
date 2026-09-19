@@ -16,6 +16,8 @@ agreement nor JSON compliance establishes correctness.
 - A24-unit course-to-skill map with explicit implemented/pending boundaries.
 - Shared competency contracts binding course knowledge to code and acceptance cases.
 - Paired comparison tooling that retains missing outputs in the planned denominator.
+- A source-read SANRA2019 narrative-review method adaptation with explicit scope,
+  whole-document coverage and unresolved-score checks; model calibration pending.
 
 Requires Python3.10+; runtime tooling uses the standard library. Put the folder
 where your agent discovers skills, or read `SKILL.md` and invoke scripts directly.

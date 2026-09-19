@@ -28,7 +28,7 @@ The registry is explicitly incremental, not a claim that all24 units are impleme
 | MC13 diagnosis | reference/spectrum/threshold assessment | adapter/calibration pending |
 | MC14 prognosis | prognostic-factor assessment | adapter/calibration pending |
 | MC15 prediction | development/validation assessment | adapter/calibration pending |
-| MC16 reviews | narrative/systematic route and own tool criteria | routing contract; SANRA full pack pending |
+| MC16 reviews | narrative/systematic route and own tool criteria | SANRA2019 adapted six-item pack and scope/coverage/sum checks implemented; real-document calibration pending |
 | MC17 synthesis | missing-evidence and sensitivity assumptions | adapter/calibration pending |
 | MC18 certainty | outcome-body judgments and thresholds | separate body-level pack pending |
 | MC19 decisions | applicability and evidence-to-decision limits | adapter/calibration pending |

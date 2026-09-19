@@ -40,6 +40,7 @@ def load_packet(path):
     m = p.get('method', {})
     require(m.get('scope_verified') is True, 'METHOD_SCOPE_UNVERIFIED')
     require(text(m.get('id')) and text(m.get('version')), 'method version missing')
+    require(m.get('coverage_policy', 'domain') in ('domain', 'whole_document'), 'unknown coverage policy')
     manual = bound_file(path.parent, m.get('manual_path'), m.get('manual_sha256'))
     domains = m.get('domains')
     require(isinstance(domains, list) and domains, 'method domains missing')
@@ -115,7 +116,8 @@ def check(packet_path, draft_path):
                 'unknown/duplicate domain')
         seen.add(key)
         require(d.get('answer') in expected[key]['allowed_answers'], 'invalid answer')
-        if d['answer'] in expected[key].get('absence_answers', []):
+        if d['answer'] in expected[key].get('absence_answers', []) or (
+                p['method'].get('coverage_policy') == 'whole_document' and d['answer'] != 'NO_INFORMATION'):
             coverage = p.get('coverage', {})
             reviewed = coverage.get('reviewed_source_ids', [])
             require(coverage.get('whole_document_reviewed') is True and

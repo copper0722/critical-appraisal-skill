@@ -113,6 +113,13 @@ class BindingTests(unittest.TestCase):
                                       limitations=['Only an excerpt was inspected.'])
         self.assertEqual(self.validate(self.draft)['status'], 'DRAFT_BINDINGS_VALID')
 
+    def test_whole_document_method_applies_to_positive_answers(self):
+        self.packet['method']['coverage_policy']='whole_document'
+        self.packet_path.write_text(json.dumps(self.packet))
+        self.draft['packet_sha256']=digest(self.packet_path.read_bytes())
+        with self.assertRaisesRegex(ValueError,'ABSENCE_NOT_ESTABLISHED'):
+            self.validate(self.draft)
+
 
 if __name__ == '__main__':
     unittest.main()

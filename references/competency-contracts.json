@@ -4,6 +4,17 @@
   "coverage": "Incremental implemented kernel; not the complete course or universal method library.",
   "competencies": [
     {
+      "id": "narrative-review-sanra",
+      "course_units": ["MC03", "MC08", "MC16"],
+      "knowledge": "SANRA evaluates six aspects of the whole narrative manuscript. Its score does not establish factual correctness or clinical certainty.",
+      "input": ["confirmed narrative-review type", "whole manuscript", "pinned scale and instructions"],
+      "decision": "Use the adapted six-item rules only after scope verification and full coverage. Preserve NO_INFORMATION and suppress sum scores until all items resolve.",
+      "output": "Six reasoned item scores; optional sum without a universal quality category",
+      "implementation": "scripts/method_pack.py; references/sanra-2019.method.json; scripts/local_appraisal.py",
+      "acceptance_cases": ["test_scope_and_controller_verification", "test_no_information_is_not_zero", "test_whole_document_method_applies_to_positive_answers"],
+      "status": "source_read_contract_tested_real_document_calibration_pending"
+    },
+    {
       "id": "source-bound-unit",
       "course_units": ["MC02", "MC04", "MC08"],
       "knowledge": "An appraisal belongs to a specific source version, assessment unit and protocol; changed inputs invalidate unqualified reuse.",

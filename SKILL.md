@@ -28,6 +28,13 @@ or clinically validated method adapter.
 
 ## Offline tools
 
+For a confirmed narrative review, bind the source-read SANRA adaptation with
+`python3 scripts/method_pack.py references/sanra-2019.method.json --document-type narrative_review`.
+This emits method fields, leaving scope_verified=false until the controller
+checks the actual document and original instructions. It requires whole-document
+coverage and preserves unresolved items instead of converting them to score zero.
+This is the first implemented method pack, not a universal-method coverage claim.
+
 `python3 scripts/local_appraisal.py prepare packet.json` emits bounded prompts.
 `python3 scripts/local_appraisal.py check packet.json draft.json` verifies input
 hashes, complete domain coverage, answer vocabularies and exact quoted lines.

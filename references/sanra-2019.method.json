@@ -1,0 +1,40 @@
+{
+  "schema": "appraisal-method-pack/v1",
+  "id": "sanra-narrative-review",
+  "version": "2019-published-figures-1-2-adaptation-v1",
+  "status": "source_read_rules_adapted_model_calibration_pending",
+  "course_units": ["MC03", "MC08", "MC16"],
+  "scope": {
+    "document_types": ["narrative_review"],
+    "assessment_unit": "whole narrative-review manuscript including abstract",
+    "excluded": ["instrument_validation_study", "systematic_review", "primary_trial", "guideline"],
+    "whole_document_required": true
+  },
+  "authority": {
+    "citation": "Baethge C, Goldbeck-Wood S, Mertens S. SANRA—a scale for the quality assessment of narrative review articles. Research Integrity and Peer Review. 2019;4:5.",
+    "doi": "10.1186/s41073-019-0064-8",
+    "article_url": "https://link.springer.com/article/10.1186/s41073-019-0064-8",
+    "scale_url": "https://link.springer.com/article/10.1186/s41073-019-0064-8/figures/1",
+    "instructions_url": "https://link.springer.com/article/10.1186/s41073-019-0064-8/figures/2",
+    "scale_image_sha256": "ef1c7dab00323ae891ec9cd485895695eeaa9d5ba138019f8a3211760760a0e6",
+    "instructions_image_sha256": "1e243502635eb8ef1906d9460ae50bc7ef4c02ce9c3461156aa6be852a4f3f27",
+    "license": "CC-BY-4.0 as stated by publisher",
+    "adaptation": "Concise paraphrased execution rules; not an official instrument revision. Verify against both original figures before an appraisal epoch."
+  },
+  "coverage_policy": "whole_document",
+  "limitations": [
+    "Evaluate all six items against the whole manuscript, including its abstract.",
+    "The instrument does not certify factual correctness, content completeness, originality or clinical applicability.",
+    "Do not translate its sum into a universal low/high risk-of-bias or GRADE category.",
+    "NO_INFORMATION indicates incomplete appraisal evidence; it is not an official SANRA score and must not be summed as zero.",
+    "Report six item judgments with reasons. Sum only six resolved scores; do not invent cross-setting quality thresholds."
+  ],
+  "domains": [
+    {"id":"importance","question":"How explicitly is importance justified for the intended readership?","allowed_answers":["0","1","2","NO_INFORMATION"],"rule":"0: no justification. 1: importance only alluded to. 2: explicit justification. Assess the journal/readership context and identified problem or evidence gap."},
+    {"id":"aims","question":"Are concrete aims or questions stated?","allowed_answers":["0","1","2","NO_INFORMATION"],"rule":"0: none. 1: general or unclear aims. 2: at least one concrete aim or question. Do not infer an explicit aim merely from the title."},
+    {"id":"search","question":"How transparently is the literature search described?","allowed_answers":["0","1","2","NO_INFORMATION"],"rule":"0: search methods unmentioned. 1: brief description. 2: detailed description including search terms and included literature types/criteria. Systematic-review-level search documentation is not required."},
+    {"id":"referencing","question":"Do references support the key statements?","allowed_answers":["0","1","2","NO_INFORMATION"],"rule":"0: key statements supported sparsely or not at all. 1: inconsistent support. 2: all or almost all relevant key statements supported. Uncontroversial statements may reasonably need no reference."},
+    {"id":"reasoning","question":"Is appropriate evidence used in the argument?","allowed_answers":["0","1","2","NO_INFORMATION"],"rule":"0: hardly any appropriate argument/evidence. 1: evidence introduced selectively or superficially. 2: appropriate evidence generally present, including study designs and available evidence levels. Separate this from numerical presentation."},
+    {"id":"data","question":"Are relevant outcome data appropriately presented?","allowed_answers":["0","1","2","NO_INFORMATION"],"rule":"0: inadequate presentation. 1: partially appropriate presentation. 2: generally appropriate relevant outcomes and uncertainty. Judge relevance for the field, including absolute/relative effects and clinical/surrogate endpoints where applicable."}
+  ]
+}
