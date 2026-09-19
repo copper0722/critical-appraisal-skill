@@ -4,6 +4,13 @@
 source-hash changes, missing full text/method scope, NO_INFORMATION and budget gates.
 These tests concern the draft contract, not the truth of an appraisal.
 
+The expanded suite has14 test methods: it also checks absence-versus-unknown
+coverage, paired comparison identity, missing/failed/abstained denominators,
+same-model refusal and finite positive weights. These are infrastructure tests.
+No high-end paired appraisal output or held-out equivalence result is yet recorded.
+The objective is small-plus-skill versus high-end quality; human/source review
+adjudicates correctness rather than declaring the high-end model infallible.
+
 An existing local mlx-community/Qwen3-VL-8B-Instruct-4bit service was tested without
 reloading. In a short methods-paraphrase pilot it selected instrument evaluation,
 but introduced an unsupported blinding concern. It was not a full-text appraisal.

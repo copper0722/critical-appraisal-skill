@@ -85,6 +85,13 @@ Packet JSON keys: `paper_id`, `assessment_unit`, `route`, `fulltext_available` (
 `sources`: [{`id`, `path`, `sha256`}]. Paths are resolved relative to the packet.
 Every domain vocabulary must include `NO_INFORMATION`. The controller prepares and
 approves packets; model text cannot set `scope_verified` or mutate the protocol.
+Optional domain `absence_answers` lists tool answers that assert information is absent.
+For those answers the controller's `coverage` must contain `whole_document_reviewed:true`,
+unique `reviewed_source_ids` covering every supplied source, `unresolved_components:[]`
+and a nonempty `search_method`. This gate checks the coverage attestation, not its truth
+or whether the controller omitted a source from the packet. Independent fidelity review
+still applies. Tool packs must declare their absence semantics; a missing declaration
+is not evidence of complete review. Existing packets remain compatible.
 
 Draft keys: `paper_id`, `assessment_unit`, `route`, `protocol_id`, `packet_sha256`,
 `status`=`DRAFT`, `domains`: [{`id`, `answer`, `rationale`, `evidence`: [{`source_id`,

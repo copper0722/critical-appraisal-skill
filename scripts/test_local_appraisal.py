@@ -82,6 +82,37 @@ class BindingTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 prompts(self.packet_path, 24000)
 
+    def absence_packet(self, coverage=None):
+        self.packet['method']['domains'][0].update(
+            allowed_answers=['YES', 'ABSENT', 'NO_INFORMATION'], absence_answers=['ABSENT'])
+        if coverage is not None:
+            self.packet['coverage'] = coverage
+        self.packet_path.write_text(json.dumps(self.packet))
+        self.draft['packet_sha256'] = digest(self.packet_path.read_bytes())
+        self.draft['domains'][0]['answer'] = 'ABSENT'
+
+    def test_absence_needs_whole_document_coverage(self):
+        self.absence_packet()
+        with self.assertRaisesRegex(ValueError, 'ABSENCE_NOT_ESTABLISHED'):
+            self.validate(self.draft)
+        complete = {'whole_document_reviewed': True, 'reviewed_source_ids': ['main'],
+                    'unresolved_components': [], 'search_method': 'Read every provided component.'}
+        for patch in ({'whole_document_reviewed': False}, {'reviewed_source_ids': []},
+                      {'reviewed_source_ids':['main','main']}, {'unresolved_components':['appendix']},
+                      {'search_method':''}):
+            self.absence_packet({**complete, **patch})
+            with self.assertRaisesRegex(ValueError, 'ABSENCE_NOT_ESTABLISHED'):
+                self.validate(self.draft)
+        self.absence_packet(complete)
+        # Binding pass still does not endorse the intentionally contradictory fixture judgment.
+        self.assertFalse(self.validate(self.draft)['claim_use_allowed'])
+
+    def test_unknown_remains_available_without_coverage(self):
+        self.absence_packet()
+        self.draft['domains'][0].update(answer='NO_INFORMATION', evidence=[],
+                                      limitations=['Only an excerpt was inspected.'])
+        self.assertEqual(self.validate(self.draft)['status'], 'DRAFT_BINDINGS_VALID')
+
 
 if __name__ == '__main__':
     unittest.main()

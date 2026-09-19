@@ -2,8 +2,10 @@
 
 An executable companion to a critical-appraisal course: route a document,
 reconstruct its evidence, apply a pinned method and return an auditable draft.
-The target is reliable appraisal with small local models. **That quality target
-has not yet been established by independent human-reference evaluation.**
+The target is small-model appraisal comparable to a high-end model on the same
+literature, using course-derived reasoning steps. **That target is not yet
+established.** Source-grounded adjudication checks both models; neither model
+agreement nor JSON compliance establishes correctness.
 
 ## Available now
 
@@ -12,6 +14,8 @@ has not yet been established by independent human-reference evaluation.**
 - Tests rejecting altered sources, fabricated quotations and invalid drafts.
 - A local-model development probe with preserved requests and responses.
 - A24-unit course-to-skill map with explicit implemented/pending boundaries.
+- Shared competency contracts binding course knowledge to code and acceptance cases.
+- Paired comparison tooling that retains missing outputs in the planned denominator.
 
 Requires Python3.10+; runtime tooling uses the standard library. Put the folder
 where your agent discovers skills, or read `SKILL.md` and invoke scripts directly.

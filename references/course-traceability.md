@@ -5,6 +5,12 @@ reading notes are supporting sources, not the denominator for universal mastery.
 This public map contains no private lesson text. Each row names an observable
 output; unfinished capabilities are explicit rather than inferred from a title.
 
+The common method contracts live in [competency-contracts.json](competency-contracts.json).
+Each binds course units, knowledge, inputs, a decision rule, output, implementation
+and acceptance cases. Course exposition and skill instructions must derive from
+the same contract; changes to one reopen dependent tests and teaching explanations.
+The registry is explicitly incremental, not a claim that all24 units are implemented.
+
 | Course | Skill output | Implementation / acceptance |
 |---|---|---|
 | MC01 task boundaries | assessment type and nonclaims | workflow; semantic test pending |

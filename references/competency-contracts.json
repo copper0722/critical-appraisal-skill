@@ -1,0 +1,52 @@
+{
+  "schema": "appraisal-course-skill-competencies/v1",
+  "purpose": "One method contract shared by course explanation, executable skill and acceptance cases.",
+  "coverage": "Incremental implemented kernel; not the complete course or universal method library.",
+  "competencies": [
+    {
+      "id": "source-bound-unit",
+      "course_units": ["MC02", "MC04", "MC08"],
+      "knowledge": "An appraisal belongs to a specific source version, assessment unit and protocol; changed inputs invalidate unqualified reuse.",
+      "input": ["packet.paper_id", "packet.assessment_unit", "packet.protocol_id", "sources.sha256"],
+      "decision": "Reject changed bytes or mismatched unit/protocol before interpreting the draft.",
+      "output": "DRAFT_BINDINGS_VALID or HOLD, never semantic acceptance",
+      "implementation": "scripts/local_appraisal.py:load_packet,check",
+      "acceptance_cases": ["test_hash_changed", "test_reject_invalid_outputs"],
+      "status": "implemented_contract_tested_not_human_calibrated"
+    },
+    {
+      "id": "unknown-versus-absence",
+      "course_units": ["MC04", "MC07", "MC08", "MC16"],
+      "knowledge": "Information unavailable to an appraiser differs from information absent after whole-document examination. The tool controls how reported absence affects its judgment.",
+      "source_example": "https://link.springer.com/article/10.1186/s41073-019-0064-8/figures/2",
+      "input": ["method.domains.absence_answers", "coverage", "draft.domains.answer"],
+      "decision": "An absence answer requires a controller record covering all supplied sources with no unresolved components and a named search method. Otherwise preserve NO_INFORMATION.",
+      "output": "ABSENCE_NOT_ESTABLISHED or draft binding result; coverage attestation is not automatically truthful",
+      "implementation": "scripts/local_appraisal.py:check",
+      "acceptance_cases": ["test_absence_needs_whole_document_coverage", "test_unknown_remains_available_without_coverage"],
+      "status": "implemented_contract_tested_semantic_coverage_pending"
+    },
+    {
+      "id": "paired-model-comparison",
+      "course_units": ["MC21", "MC22", "MC24"],
+      "knowledge": "A fair comparison uses matched sources, methods and assessment units; agreement and correctness are different endpoints.",
+      "input": ["protocol.cases", "small_run", "high_end_run"],
+      "decision": "Reject mismatched inputs and same-model arms. Include failed or missing outputs in the planned denominator. Adjudicate against sources before equivalence claims.",
+      "output": "Paired and planned agreement, per-question discordance, unresolved acceptance requirements",
+      "implementation": "scripts/compare_models.py:compare",
+      "acceptance_cases": ["test_matching_is_not_truth", "test_missing_answers_stay_in_denominator", "test_absent_failed_and_abstained_cases", "test_wrong_identity_and_duplicate_refused"],
+      "status": "implemented_contract_tested_actual_high_end_comparison_pending"
+    },
+    {
+      "id": "blinding-roles",
+      "course_units": ["MC03", "MC06", "MC08", "MC23"],
+      "knowledge": "Specify who was blinded, to which information and at what phase; do not transfer one role's blinding to another.",
+      "input": ["source.methods", "assessment_unit"],
+      "decision": "Extract role and concealed information separately before applying a design-specific method.",
+      "output": "Role-specific facts with supporting source quotes",
+      "implementation": "scripts/evaluate_local.py:FIELD_RULES",
+      "acceptance_cases": ["rater_blinding", "participant_blinding", "blinding_unreported", "review_of_trials"],
+      "status": "development_3_of_4_factwise_cases_not_held_out"
+    }
+  ]
+}

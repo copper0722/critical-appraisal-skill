@@ -52,6 +52,10 @@ def load_packet(path):
         require(strings(d.get('allowed_answers')), 'invalid allowed answers')
         require('NO_INFORMATION' in d['allowed_answers'], 'missing NO_INFORMATION answer')
         require(len(set(d['allowed_answers'])) == len(d['allowed_answers']), 'duplicate answers')
+        absence = d.get('absence_answers', [])
+        require(strings(absence) and set(absence) <= set(d['allowed_answers']),
+                'invalid absence answer vocabulary')
+        require('NO_INFORMATION' not in absence, 'unknown is not an absence finding')
     records = p.get('sources')
     require(isinstance(records, list) and records, 'sources missing')
     sources = {}
@@ -81,6 +85,7 @@ def prompts(packet_path, max_chars):
             'route': p['route'], 'protocol_id': p['protocol_id'], 'packet_sha256': sha,
             'method_id': p['method']['id'], 'method_version': p['method']['version'],
             'domain': d, 'manual': manual, 'numbered_evidence': evidence,
+            'coverage': p.get('coverage'),
         }, ensure_ascii=False)
         require(len(system) + len(user) <= max_chars,
                 'SPLIT_REQUIRED: prepare a smaller evidence/manual slice; never truncate')
@@ -110,6 +115,15 @@ def check(packet_path, draft_path):
                 'unknown/duplicate domain')
         seen.add(key)
         require(d.get('answer') in expected[key]['allowed_answers'], 'invalid answer')
+        if d['answer'] in expected[key].get('absence_answers', []):
+            coverage = p.get('coverage', {})
+            reviewed = coverage.get('reviewed_source_ids', [])
+            require(coverage.get('whole_document_reviewed') is True and
+                    strings(reviewed) and len(reviewed) == len(set(reviewed)) and
+                    set(reviewed) == set(sources) and
+                    coverage.get('unresolved_components') == [] and
+                    text(coverage.get('search_method')),
+                    'ABSENCE_NOT_ESTABLISHED: incomplete controller coverage record')
         require(text(d.get('rationale')), 'missing rationale')
         require(strings(d.get('limitations')), 'domain limitations must be a string list')
         evidence = d.get('evidence')

@@ -41,6 +41,11 @@ runs four original synthetic development cases on an already-loaded local model.
 It neither replaces the resident model nor provides a human reference benchmark.
 Inspect [evaluation limits](EVALUATION.md) before interpreting its results.
 
+For small-versus-high-end model evaluation, read
+[the comparison protocol](references/model-equivalence-protocol.md) and use
+`scripts/compare_models.py`. Agreement is reported separately from correctness;
+missing outputs remain in the planned denominator. No automatic equivalence claim.
+
 ## Boundaries
 
 Abstract-only input cannot yield completed full-text appraisal. Source excerpts
