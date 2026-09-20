@@ -148,3 +148,16 @@ failed validation; it is a completed failed observation, not permission to retry
 or remove its denominator. `FAILED_OR_UNRESOLVED` stops the run: inspect the exact
 original request/runtime before further calls. Neither schema compliance nor a
 valid source ID proves that the cited text supports every part of the answer.
+
+### Deterministic quote locations
+
+Use `python3 scripts/evidence_anchors.py source.txt quote.txt --source-sha256 SHA`
+to locate an explicit candidate quotation without asking a model to invent
+numeric source IDs. The default requires exact text. The explicit option
+`--normalization whitespace` permits whitespace differences only; punctuation,
+words, negation, names and numbers remain unchanged. Returned offsets are
+Unicode character offsets in the original source text, and returned quotations
+come from that unchanged source. Repeated text is AMBIGUOUS, never silently
+assigned to its first occurrence. Context remains available for role and
+negation checks. LOCATED does not mean the quotation supports the whole claim:
+semantic_acceptance and claim_use_allowed remain false.
