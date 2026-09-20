@@ -88,3 +88,14 @@ IDs, or categorical agreement with a correct appraisal. No universal quality,
 human-reference, clinical-use or model-equivalence gate is closed here.
 The expanded offline suite has32 tests; source text and private request/response
 logs are not redistributed in this repository.
+
+A fresh independent AI source review subsequently read the complete supplied
+text before inspecting the six block-view outputs. It found all six categorical
+answers supported by the full source, but only four had complete support in
+their selected evidence blocks. Rater/developer identity and the ICC model's
+full definition each lacked a needed source passage. Three rationales included
+facts outside their selected blocks; one quoted sentence was attributed to the
+wrong block. The controller verified every reported character-offset quotation
+against the unchanged source text. This review is independent AI adjudication,
+not qualified-human gold, and does not close the method-quality gate. The raw
+answers remain unchanged; evidence repair must retain this initial result.
