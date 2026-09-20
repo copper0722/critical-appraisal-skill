@@ -133,3 +133,18 @@ human correction burden and time. Report coverage among answered and abstained c
 Record model/quantization/context/runtime/seed and exact packets. A new model or method
 version reopens affected calibration. Multiple samples from one model are not independent
 human validation. No held-out dataset or local-model results exist in this new module yet.
+
+### Bounded evaluation runner
+
+`evaluate_packet.py` can request schema-constrained answers on an endpoint whose
+support has been verified. `--evidence-mode span_ids --structured-output` bounds
+IDs to the supplied source and caps their count (default3). `--span-layout blocks`
+uses contiguous, character-preserving blocks with non-numeric IDs; the original
+source hash and derived view hash are both retained. This avoids isolated HTML
+line fragments without hiding any source through relevance filtering.
+
+Keep raw responses immutable. `RESPONSE_INVALID` means a response arrived but
+failed validation; it is a completed failed observation, not permission to retry
+or remove its denominator. `FAILED_OR_UNRESOLVED` stops the run: inspect the exact
+original request/runtime before further calls. Neither schema compliance nor a
+valid source ID proves that the cited text supports every part of the answer.

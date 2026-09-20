@@ -58,3 +58,33 @@ model snapshot was not exposed beyond the selected model identifier.
 Current offline suite:20 test methods, adding source-read SANRA scope, six-item
 score handling, whole-document coverage and comparator input export. Passing
 these tests still does not establish semantic appraisal quality.
+
+## 2026-09-20: received-answer handling and evidence-span development
+
+The source-bound runner now distinguishes a received invalid/truncated response
+from an unresolved transport request. A received invalid response remains a
+failed answer in the planned denominator; subsequent planned questions proceed,
+without retrying the failed question. A transport timeout still stops the run.
+Optional JSON-schema decoding requires an explicitly verified compatible local
+endpoint; it never replaces response/source validation.
+
+On the preserved SANRA instrument-validation development packet (six factual
+questions, not a SANRA score of a narrative review), a minimal-span prompt alone
+produced4/6 structurally bound responses. One response still exhausted700 output
+tokens and another exceeded the span cap. With the endpoint's explicit schema
+request,6/6 responses were structurally bound, with unchanged source text and
+model identity. This is a development intervention, not held-out evaluation.
+
+Source inspection found incorrect evidence pointers despite correct-looking
+categorical answers: some selected numeric spans were isolated statistical
+symbols or an ICC result rather than its model definition. An optional contiguous
+block view preserves every source character, uses non-numeric IDs and records
+its own view hash. A subsequent six-question block-view run again passed6/6
+structural bindings, but at least one selected block still lacked a component
+claimed in the rationale. Independent source adjudication remains required.
+
+These observations are evidence against equating JSON compliance, valid span
+IDs, or categorical agreement with a correct appraisal. No universal quality,
+human-reference, clinical-use or model-equivalence gate is closed here.
+The expanded offline suite has32 tests; source text and private request/response
+logs are not redistributed in this repository.
