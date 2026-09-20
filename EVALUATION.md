@@ -99,3 +99,19 @@ wrong block. The controller verified every reported character-offset quotation
 against the unchanged source text. This review is independent AI adjudication,
 not qualified-human gold, and does not close the method-quality gate. The raw
 answers remain unchanged; evidence repair must retain this initial result.
+
+## RoB 2 decision-engine verification (2026-09-21)
+
+The 2019 parallel-trial engine adds 15 developer tests (54 total repository tests).
+An independent review visually checked original Figures 1-5 and 7 plus their
+question/response pages. Its separate truth-table enumeration covered 615,850
+records: all 35,669 complete valid proposals matched, and 580,181 invalid
+conditional/NA records were rejected. Both assignment and adhering D2 branches,
+all seven nonempty adhering deviation selections, question-specific NI, technical
+abstention, source/method/result binding, overrides and overall review were checked.
+
+An actual unchanged original-manual CLI run also passed with synthetic signalling
+inputs. These results support algorithm/contract fidelity only. They do not
+measure whether a small model extracts correct study facts or supplies justified
+answers. Real trial appraisal, cluster/crossover variants, model calibration and
+held-out comparison remain unfinished. No human-quality or equivalence claim follows.

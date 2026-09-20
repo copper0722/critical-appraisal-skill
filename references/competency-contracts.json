@@ -5,58 +5,150 @@
   "competencies": [
     {
       "id": "narrative-review-sanra",
-      "course_units": ["MC03", "MC08", "MC16"],
+      "course_units": [
+        "MC03",
+        "MC08",
+        "MC16"
+      ],
       "knowledge": "SANRA evaluates six aspects of the whole narrative manuscript. Its score does not establish factual correctness or clinical certainty.",
-      "input": ["confirmed narrative-review type", "whole manuscript", "pinned scale and instructions"],
+      "input": [
+        "confirmed narrative-review type",
+        "whole manuscript",
+        "pinned scale and instructions"
+      ],
       "decision": "Use the adapted six-item rules only after scope verification and full coverage. Preserve NO_INFORMATION and suppress sum scores until all items resolve.",
       "output": "Six reasoned item scores; optional sum without a universal quality category",
       "implementation": "scripts/method_pack.py; references/sanra-2019.method.json; scripts/local_appraisal.py",
-      "acceptance_cases": ["test_scope_and_controller_verification", "test_no_information_is_not_zero", "test_whole_document_method_applies_to_positive_answers"],
+      "acceptance_cases": [
+        "test_scope_and_controller_verification",
+        "test_no_information_is_not_zero",
+        "test_whole_document_method_applies_to_positive_answers"
+      ],
       "status": "source_read_contract_tested_real_document_calibration_pending"
     },
     {
+      "id": "rob2-parallel-result",
+      "course_units": [
+        "MC02",
+        "MC07",
+        "MC08",
+        "MC09"
+      ],
+      "knowledge": "RoB2 2019 evaluates a specific trial result. D2 differs by assignment/adhering effect, NI is question-specific, and technical abstention is not an instrument response. Overall multiple concerns need qualitative review.",
+      "input": [
+        "verified individually randomized parallel design",
+        "result/outcome/timepoint/arms",
+        "original manual hash and version",
+        "explicit signalling responses with bound source reasons/locators",
+        "D2 effect and adhering deviation choices"
+      ],
+      "decision": "Apply the original decision diagrams only to permitted active responses. Preserve HOLD, proposals and explained overrides; require an explicit combined-concerns judgement when applicable, never a sum score.",
+      "output": "Five traced domain proposals plus overall proposal or HOLD; semantic_acceptance and claim_use_allowed remain false",
+      "implementation": "scripts/rob2.py; references/rob2-parallel-2019.md",
+      "acceptance_cases": [
+        "test_assignment_blinding_does_not_rescue_wrong_analysis",
+        "test_adhering_selected_types_and_inclusive_deviations",
+        "test_missing_data_no_automatic_percentage_rule_or_ni_coercion",
+        "test_measurement_ni_floor_and_later_high",
+        "test_selection_one_ni_suffices_for_some_concerns",
+        "test_overall_qualitative_joint_concerns_not_numeric_score",
+        "test_manual_source_result_and_branch_identity"
+      ],
+      "status": "decision_engine_contract_tested_model_signal_extraction_and_real_document_calibration_pending"
+    },
+    {
       "id": "source-bound-unit",
-      "course_units": ["MC02", "MC04", "MC08"],
+      "course_units": [
+        "MC02",
+        "MC04",
+        "MC08"
+      ],
       "knowledge": "An appraisal belongs to a specific source version, assessment unit and protocol; changed inputs invalidate unqualified reuse.",
-      "input": ["packet.paper_id", "packet.assessment_unit", "packet.protocol_id", "sources.sha256"],
+      "input": [
+        "packet.paper_id",
+        "packet.assessment_unit",
+        "packet.protocol_id",
+        "sources.sha256"
+      ],
       "decision": "Reject changed bytes or mismatched unit/protocol before interpreting the draft.",
       "output": "DRAFT_BINDINGS_VALID or HOLD, never semantic acceptance",
       "implementation": "scripts/local_appraisal.py:load_packet,check",
-      "acceptance_cases": ["test_hash_changed", "test_reject_invalid_outputs"],
+      "acceptance_cases": [
+        "test_hash_changed",
+        "test_reject_invalid_outputs"
+      ],
       "status": "implemented_contract_tested_not_human_calibrated"
     },
     {
       "id": "unknown-versus-absence",
-      "course_units": ["MC04", "MC07", "MC08", "MC16"],
+      "course_units": [
+        "MC04",
+        "MC07",
+        "MC08",
+        "MC16"
+      ],
       "knowledge": "Information unavailable to an appraiser differs from information absent after whole-document examination. The tool controls how reported absence affects its judgment.",
       "source_example": "https://link.springer.com/article/10.1186/s41073-019-0064-8/figures/2",
-      "input": ["method.domains.absence_answers", "coverage", "draft.domains.answer"],
+      "input": [
+        "method.domains.absence_answers",
+        "coverage",
+        "draft.domains.answer"
+      ],
       "decision": "An absence answer requires a controller record covering all supplied sources with no unresolved components and a named search method. Otherwise preserve NO_INFORMATION.",
       "output": "ABSENCE_NOT_ESTABLISHED or draft binding result; coverage attestation is not automatically truthful",
       "implementation": "scripts/local_appraisal.py:check",
-      "acceptance_cases": ["test_absence_needs_whole_document_coverage", "test_unknown_remains_available_without_coverage"],
+      "acceptance_cases": [
+        "test_absence_needs_whole_document_coverage",
+        "test_unknown_remains_available_without_coverage"
+      ],
       "status": "implemented_contract_tested_semantic_coverage_pending"
     },
     {
       "id": "paired-model-comparison",
-      "course_units": ["MC21", "MC22", "MC24"],
+      "course_units": [
+        "MC21",
+        "MC22",
+        "MC24"
+      ],
       "knowledge": "A fair comparison uses matched sources, methods and assessment units; agreement and correctness are different endpoints.",
-      "input": ["protocol.cases", "small_run", "high_end_run"],
+      "input": [
+        "protocol.cases",
+        "small_run",
+        "high_end_run"
+      ],
       "decision": "Reject mismatched inputs and same-model arms. Include failed or missing outputs in the planned denominator. Adjudicate against sources before equivalence claims.",
       "output": "Paired and planned agreement, per-question discordance, unresolved acceptance requirements",
       "implementation": "scripts/compare_models.py:compare",
-      "acceptance_cases": ["test_matching_is_not_truth", "test_missing_answers_stay_in_denominator", "test_absent_failed_and_abstained_cases", "test_wrong_identity_and_duplicate_refused"],
+      "acceptance_cases": [
+        "test_matching_is_not_truth",
+        "test_missing_answers_stay_in_denominator",
+        "test_absent_failed_and_abstained_cases",
+        "test_wrong_identity_and_duplicate_refused"
+      ],
       "status": "implemented_contract_tested_actual_high_end_comparison_pending"
     },
     {
       "id": "blinding-roles",
-      "course_units": ["MC03", "MC06", "MC08", "MC23"],
+      "course_units": [
+        "MC03",
+        "MC06",
+        "MC08",
+        "MC23"
+      ],
       "knowledge": "Specify who was blinded, to which information and at what phase; do not transfer one role's blinding to another.",
-      "input": ["source.methods", "assessment_unit"],
+      "input": [
+        "source.methods",
+        "assessment_unit"
+      ],
       "decision": "Extract role and concealed information separately before applying a design-specific method.",
       "output": "Role-specific facts with supporting source quotes",
       "implementation": "scripts/evaluate_local.py:FIELD_RULES",
-      "acceptance_cases": ["rater_blinding", "participant_blinding", "blinding_unreported", "review_of_trials"],
+      "acceptance_cases": [
+        "rater_blinding",
+        "participant_blinding",
+        "blinding_unreported",
+        "review_of_trials"
+      ],
       "status": "development_3_of_4_factwise_cases_not_held_out"
     }
   ]

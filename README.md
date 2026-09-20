@@ -18,6 +18,9 @@ agreement nor JSON compliance establishes correctness.
 - Paired comparison tooling that retains missing outputs in the planned denominator.
 - A source-read SANRA2019 narrative-review method adaptation with explicit scope,
   whole-document coverage and unresolved-score checks; model calibration pending.
+- A RoB2 (2019 parallel trial) decision engine for five domains and both D2 effect
+  branches, with manual/result binding, explicit signalling answers, reasoned
+  overrides and qualitative overall review. Model extraction/calibration pending.
 
 Requires Python3.10+; runtime tooling uses the standard library. Put the folder
 where your agent discovers skills, or read `SKILL.md` and invoke scripts directly.

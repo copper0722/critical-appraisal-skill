@@ -35,6 +35,15 @@ checks the actual document and original instructions. It requires whole-document
 coverage and preserves unresolved items instead of converting them to score zero.
 This is the first implemented method pack, not a universal-method coverage claim.
 
+For one result of a confirmed individually randomized parallel-group trial,
+read [the RoB 2 execution contract](references/rob2-parallel-2019.md). Supply the
+unchanged original 2019 manual and explicit source-supported signalling answers
+to `python3 scripts/rob2.py assessment.json --manual original-guidance.pdf`.
+The engine preserves both D2 effect branches, conditional questions, reasoned
+overrides and overall qualitative review. Its proposals remain unaccepted until
+source adjudication; it does not yet extract trial answers with a model.
+Never convert model abstention into the tool's NI answer; question3.2 has no NI.
+
 `python3 scripts/local_appraisal.py prepare packet.json` emits bounded prompts.
 `python3 scripts/local_appraisal.py check packet.json draft.json` verifies input
 hashes, complete domain coverage, answer vocabularies and exact quoted lines.

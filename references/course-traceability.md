@@ -21,7 +21,7 @@ The registry is explicitly incremental, not a claim that all24 units are impleme
 | MC06 bias mechanisms | anchored causal critique | method-specific pack pending |
 | MC07 missingness/multiplicity | explicit unknowns and planned/reported contrast | NO_INFORMATION checks; full analysis pending |
 | MC08 appraisal record | facts, judgments, anchors and limits | draft contract implemented; semantic audit pending |
-| MC09 RCT | result-specific domains and rationale | pinned method adapter/calibration pending |
+| MC09 RCT | result-specific domains and rationale | RoB2 2019 parallel-trial five-domain decision engine, both D2 branches and explicit overall-review gate; model signal extraction and calibration pending |
 | MC10 special RCT | design-specific domains and analysis units | adapters/calibration pending |
 | MC11 NRSI | target trial/estimand and confounding structure | adapter/calibration pending |
 | MC12 exposure/harm | exposure-specific assessment | adapter/calibration pending |
