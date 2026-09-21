@@ -60,6 +60,37 @@ class PacketRunTests(unittest.TestCase):
             with self.assertRaises(ValueError):run(self.p,'small','http://localhost',self.o)
             net.assert_not_called()
 
+    def test_explicit_source_budget_preserves_full_text_and_default_refuses(self):
+        quote=self.source
+        source=quote+'\n'+'context '*5000
+        self.packet['source_text']=source
+        self.packet['source_text_sha256']=hashlib.sha256(source.encode()).hexdigest()
+        self.p.write_text(json.dumps(self.packet))
+        with patch('evaluate_packet.urllib.request.urlopen') as net:
+            with self.assertRaisesRegex(ValueError,'source size'):run(self.p,'small','http://localhost',self.o)
+            net.assert_not_called()
+        self.assertFalse(self.o.exists())
+        def transport(req,timeout=None):
+            if isinstance(req,str):return self.response({'loaded_model':'small'})
+            self.sent+=1
+            self.assertEqual(json.loads(req.data)['messages'][1]['content'],source)
+            return self.response({'model':'small','choices':[{'finish_reason':'stop','message':{
+                'content':json.dumps({'value':'NO','quote':quote,'rationale':'Explicit negative.'})}}]})
+        with patch('evaluate_packet.urllib.request.urlopen',side_effect=transport):
+            summary=run(self.p,'small','http://localhost',self.o,max_source_chars=80000)
+        self.assertEqual(self.sent,1)
+        self.assertEqual((summary['source_chars'],summary['max_source_chars'],summary['binding_passes']),
+                         (len(source),80000,1))
+        rows=[json.loads(l) for l in self.o.read_text().splitlines()]
+        self.assertTrue(all(row['max_source_chars']==80000 for row in rows))
+
+    def test_invalid_source_budgets_fail_before_network_or_output(self):
+        for limit in (0,-1,80001,True,None,1.5,'80000'):
+            with self.subTest(limit=limit),patch('evaluate_packet.urllib.request.urlopen') as net:
+                with self.assertRaises(ValueError):run(self.p,'small','http://localhost',self.o,max_source_chars=limit)
+                net.assert_not_called()
+            self.assertFalse(self.o.exists())
+
     def test_span_ids_resolve_from_source(self):
         def transport(req,timeout=None):
             if isinstance(req,str):return self.response({'loaded_model':'small'})

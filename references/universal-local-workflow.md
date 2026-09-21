@@ -222,6 +222,15 @@ Tests use invented developer fixtures, not human gold.
 
 ### Deterministic quote locations
 
+The question runner keeps its 40,000-character source limit by default. An operator
+may explicitly set `--max-source-chars` up to 80,000 to retain a complete report.
+The runner never truncates the input and records both its length and the chosen
+limit. A character limit is not a token or memory guarantee: verify the selected
+model's tokenizer, effective context and available working budget before increasing
+it. This option does not load, reload or reconfigure a model. All comparison arms
+must receive the same frozen source scope; record a pre-inference budget amendment
+instead of silently dropping long documents or removing relevant sections.
+
 Use `python3 scripts/evidence_anchors.py source.txt quote.txt --source-sha256 SHA`
 to locate an explicit candidate quotation without asking a model to invent
 numeric source IDs. The default requires exact text. The explicit option

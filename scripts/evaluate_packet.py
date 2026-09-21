@@ -19,6 +19,8 @@ SYSTEM=('Answer one appraisal question about THIS document using only the suppli
         'Keep rationale short. Do not output a quality score or claim final acceptance.')
 
 HTTP_ERROR_BODY_LIMIT = 65536
+DEFAULT_SOURCE_CHAR_LIMIT = 40000
+MAX_SOURCE_CHAR_LIMIT = 80000
 
 
 def http_error_evidence(error):
@@ -118,11 +120,14 @@ def source_spans(text, layout='lines', block_chars=1200):
 
 
 def run(packet_path, model, base, output, stop_file=None, evidence_mode='quote', max_evidence_spans=3,
-        structured_output=False, span_layout='lines'):
+        structured_output=False, span_layout='lines', max_source_chars=DEFAULT_SOURCE_CHAR_LIMIT):
+    if (not isinstance(max_source_chars, int) or isinstance(max_source_chars, bool)
+            or not 1 <= max_source_chars <= MAX_SOURCE_CHAR_LIMIT):
+        raise ValueError('source character limit must be an integer between 1 and 80000')
     raw=Path(packet_path).read_bytes();p=json.loads(raw)
     text=p['source_text'];source_sha=hashlib.sha256(text.encode()).hexdigest()
     if source_sha!=p['source_text_sha256']:raise ValueError('source hash mismatch')
-    if not 0<len(text)<=40000:raise ValueError('source size requires bounded preparation')
+    if not 0<len(text)<=max_source_chars:raise ValueError('source size requires bounded preparation')
     questions=p['questions']
     if not questions or len({q['id'] for q in questions})!=len(questions):raise ValueError('invalid question set')
     if any(not q.get('allowed_values') or 'NO_INFORMATION' not in q['allowed_values'] for q in questions):raise ValueError('invalid vocabulary')
@@ -166,6 +171,7 @@ def run(packet_path, model, base, output, stop_file=None, evidence_mode='quote',
             data=json.dumps(payload).encode();start=time.monotonic()
             row={'packet_id':p['id'],'packet_sha256':hashlib.sha256(raw).hexdigest(),
                 'question_id':q['id'],'planned_questions':len(questions),
+                'source_chars':len(text),'max_source_chars':max_source_chars,
                 'state':'REQUEST_STARTED','request':payload,'evidence_mode':evidence_mode,
                  'max_evidence_spans':max_evidence_spans,
                  'structured_output_requested':structured_output,
@@ -197,6 +203,7 @@ def run(packet_path, model, base, output, stop_file=None, evidence_mode='quote',
             stream.write(json.dumps(row)+'\n');stream.flush();rows.append(row)
         summary={'state':'COMPLETE','model':model,'questions':len(rows),
                  'planned_questions':len(questions),'invalid_responses':sum(not r['binding_pass'] for r in rows),
+                 'source_chars':len(text),'max_source_chars':max_source_chars,
                  'binding_passes':sum(r['binding_pass'] for r in rows),
                  'source_sha256':source_sha,'semantic_acceptance':False,'health_after':health()}
         if fact_mode:summary['fact_counts']=awareness_facts.summarize(rows)
@@ -213,5 +220,7 @@ if __name__=='__main__':
     ap.add_argument('--max-evidence-spans',type=int,default=3)
     ap.add_argument('--structured-output',action='store_true',help='Request JSON-schema decoding only on a verified compatible endpoint; validation remains mandatory')
     ap.add_argument('--span-layout',choices=['lines','blocks'],default='lines')
+    ap.add_argument('--max-source-chars',type=int,default=DEFAULT_SOURCE_CHAR_LIMIT,
+                    help='Explicit source-text limit, 1..80000 (default40000). Check actual model token/memory budget separately; no truncation or model reload.')
     a=ap.parse_args()
-    print(json.dumps(run(a.packet,a.model,a.base_url,a.output,a.stop_file,a.evidence_mode,a.max_evidence_spans,a.structured_output,a.span_layout)))
+    print(json.dumps(run(a.packet,a.model,a.base_url,a.output,a.stop_file,a.evidence_mode,a.max_evidence_spans,a.structured_output,a.span_layout,a.max_source_chars)))
