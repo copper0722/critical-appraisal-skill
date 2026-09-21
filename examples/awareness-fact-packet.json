@@ -1,0 +1,49 @@
+{
+  "id": "awareness-fact-example",
+  "assessment_unit": "synthetic-study-1",
+  "source_text": "Synthetic example, invented text.\nThe trial randomised 40 adults to inhaler K or inhaler M.\nThe dispensing unit held the allocation list and was instructed not to reveal it.\nAfter allocation, ward nurses were told only the labels K and M. They did not know which inhaler was active.\n",
+  "source_text_sha256": "f0004479c0d07c6a3bbeb36d86d17f1042f5eb10f8b327582e33193b1ea1b77e",
+  "questions": [
+    {
+      "id": "nurses-aware-of-assignment",
+      "question": "During the trial after allocation, did the ward nurses know which inhaler each participant was assigned?",
+      "allowed_values": [
+        "REPORTED_AWARE",
+        "REPORTED_UNAWARE",
+        "NO_INFORMATION"
+      ],
+      "fact_schema": {
+        "version": "awareness-fact/v1",
+        "target": {
+          "actor": "ward_nurses",
+          "phase": "after_allocation",
+          "information": "ASSIGNED_INTERVENTION_IDENTITY"
+        },
+        "actors": {
+          "ward_nurses": [
+            "ward nurses",
+            "nursing staff"
+          ],
+          "dispensing_unit": [
+            "dispensing unit",
+            "pharmacy"
+          ],
+          "participants": [
+            "participants",
+            "adults"
+          ]
+        },
+        "phases": {
+          "after_allocation": [
+            "after allocation",
+            "during the trial"
+          ],
+          "before_allocation": [
+            "before allocation",
+            "at enrolment"
+          ]
+        }
+      }
+    }
+  ]
+}

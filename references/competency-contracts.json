@@ -142,14 +142,17 @@
       ],
       "decision": "Extract role and concealed information separately before applying a design-specific method.",
       "output": "Role-specific facts with supporting source quotes",
-      "implementation": "scripts/evaluate_local.py:FIELD_RULES",
+      "implementation": "scripts/evaluate_local.py:FIELD_RULES; scripts/awareness_facts.py; scripts/evaluate_packet.py (opt-in fact_schema)",
       "acceptance_cases": [
         "rater_blinding",
         "participant_blinding",
         "blinding_unreported",
-        "review_of_trials"
+        "review_of_trials",
+        "test_direct_knowledge_and_nonknowledge_derive_polarity",
+        "test_non_direct_statements_retain_target_and_plan_flags",
+        "test_source_binding_and_slot_consistency_are_orthogonal"
       ],
-      "status": "development_3_of_4_factwise_cases_not_held_out"
+      "status": "direct_awareness_fact_contract_tested_real_source_quality_and_coverage_pending"
     }
   ]
 }

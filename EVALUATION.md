@@ -164,3 +164,20 @@ CLI smoke check against a disposable HTTP 500 server verified evidence retention
 and stopping without replay or subsequent questions. Those checks establish
 transport behavior, not the truth of an appraisal. Source payloads and raw model
 request/response bundles are retained outside this public repository.
+
+## Opt-in awareness fact extraction (2026-09-21)
+
+`fact_schema` adds one direct awareness proposition per question with evidence-first
+slots and deterministic internal-consistency checks (`scripts/awareness_facts.py`).
+It targets the persisting failure above: an instruction not to disclose the allocation
+read as staff unawareness. Access, coded labels, disclosure rules, plans, inference and
+mismatched actors, phases or information now derive `NO_INFORMATION` with flags; only a
+direct actual-conduct statement about the exact target derives awareness polarity.
+
+What this establishes: 30 new offline developer tests (87 total) on invented text
+with stubbed output show supported direct cases passing and each confusable case not
+deriving awareness, and that legacy request bytes match hashes recorded before the change.
+What it does not: slot truth, span entailment, accuracy or coverage on any real source,
+or human quality. A mislabelled slot still passes. No model was called and no awareness
+pilot was rerun; derived-`NO_INFORMATION` coverage cost is unmeasured. Any accuracy
+claim needs a fresh held-out family evaluation with independent qualified ratings.

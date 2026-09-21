@@ -156,6 +156,70 @@ error does not prove the backend stopped computing: `request_resolved` remains
 false until the operator reconciles the original request. Do not silently replay
 it or replace its failed observation with a later successful attempt.
 
+### Opt-in awareness facts (internal consistency only)
+
+Limit first: this extracts ONE direct awareness proposition and checks it for
+internal consistency. It does not test entailment or factual accuracy. The small
+model fills the slots; a wrongly labelled slot (wrong actor, wrong proposition)
+still passes every deterministic check. A consistent fact is `UNREVIEWED`, never
+source-supported, and no path here sets `semantic_acceptance` or `claim_use_allowed`.
+
+Enable per question with `fact_schema` (all questions in a packet, or none; example:
+`examples/awareness-fact-packet.json`). Requires `--evidence-mode span_ids`;
+`--structured-output` is optional. Without `fact_schema`, request messages, response
+schema and serialized request bytes are unchanged. Rollback: remove `fact_schema`.
+
+```
+"fact_schema": {"version": "awareness-fact/v1",
+  "target": {"actor": ID, "phase": ID, "information": "ASSIGNED_INTERVENTION_IDENTITY" | "RECEIVED_INTERVENTION_IDENTITY"},
+  "actors": {ID: [aliases]}, "phases": {ID: [aliases]}}
+```
+
+`allowed_values` must be exactly `REPORTED_AWARE`, `REPORTED_UNAWARE`, `NO_INFORMATION`.
+Method vocabularies (Y/PY/PN/N/NI) are a separate later judgment layer; technical
+`NO_INFORMATION` is never mapped to instrument NI. IDs are lowercase `[a-z][a-z0-9_]*`;
+aliases are shown to the model only, code compares IDs. Assigned and received identity
+are distinct targets. The target scope is actual conduct; plans are not a target here.
+A malformed or unsupported configuration raises before any request or health call.
+
+Response keys, in order: `source_span_ids`, `statement_actor`, `phase`, `information`,
+`scope` (`REPORTED_CONDUCT`/`PLANNED`/`NOT_STATED`), `proposition`, `rationale`,
+`fact_value`. Propositions: `DIRECT_IDENTITY_KNOWLEDGE`, `DIRECT_IDENTITY_NONKNOWLEDGE`,
+`ALLOCATION_KEY_ACCESS_ONLY`, `CODED_LABEL_HANDLING_ONLY`, `NONDISCLOSURE_RULE_ONLY`,
+`INFERENCE`, `NOT_STATED`. Only a direct proposition by the target actor, in the target
+phase, about the target information, with scope `REPORTED_CONDUCT`, derives `REPORTED_AWARE`
+or `REPORTED_UNAWARE`. Everything else derives `NO_INFORMATION` for the target and keeps
+its content in the slots. Extra keys, including any review or acceptance field, fail binding.
+Key order is validated even without structured decoding; a wrong order is retained as
+`INVALID_FIELD_ORDER`, without reordering the model response.
+
+Per row, the controller adds `derived_fact_value`, `fact_flags`
+(`ACTOR_MISMATCH`, `PHASE_MISMATCH`, `INFORMATION_MISMATCH`, `PLAN_ONLY`,
+`SCOPE_NOT_STATED`, `NON_DIRECT_PROPOSITION`), `deterministic_status`
+(`CONSISTENT_DIRECT`, `CONSISTENT_NO_INFORMATION`, `FLAGGED`, `INCONSISTENT`, `INVALID`),
+`review_status: UNREVIEWED` and both acceptance booleans false. The model's `answer` is
+stored unchanged. A model `fact_value` that differs from the derived value is
+`VALUE_SLOT_CONFLICT`: a received `RESPONSE_INVALID` row that stays in the planned
+denominator with its raw output and evidence; nothing is rewritten. Direct facts need
+evidence IDs; `NO_INFORMATION` may keep contextual ones. Every stated proposition retains
+its actor/phase/information/scope mismatch flags, including non-direct propositions.
+The all-`NOT_STATED` unknown record needs no mismatch flags.
+
+Fact-mode rows separately record `fact_source_binding_pass` (structure, source and
+provider binding) and `fact_slot_consistency_pass` (whether usable slots agree with
+the emitted value). Neither establishes source meaning. Legacy `binding_pass` retains
+its existing combined-validation meaning. The summary's `fact_counts.valid_binding`
+counts the first field; `slot_consistency_passes` counts the second. A source-bound
+slot/value conflict therefore counts as bound and inconsistent; derived unknown
+knowledge remains in `unresolved_knowledge`. An invalid evidence ID is unbound even
+when its slots are self-consistent. Consistent direct, unknown, flagged, inconsistent
+and invalid counts remain available. STOP, HTTP-error and no-replay behavior are unchanged.
+
+Not in this slice: participant flow, dates or chronology, independent-review
+certification, question sequencing, digit gates, RoB 2 answers. Facts are not fed to
+`rob2.assess`; any qualified inference for a method answer is a later, separate layer.
+Tests use invented developer fixtures, not human gold.
+
 ### Deterministic quote locations
 
 Use `python3 scripts/evidence_anchors.py source.txt quote.txt --source-sha256 SHA`

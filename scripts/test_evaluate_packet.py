@@ -234,4 +234,183 @@ class PacketRunTests(unittest.TestCase):
         self.assertEqual(len(row['source_view_sha256']),64)
 
 
+# Request hashes recorded from the runner before awareness facts existed (e3008f4).
+LEGACY_REQUEST_SHA256={
+    'quote':'e86aca37da1444da176a5f299fdfbc63e76f2ee459685e01a35c9e797c56c387',
+    'span_ids':'c62f67678bad1f60c54c4276234134bc54c03b5cfa908caa77edd51ccafe3518',
+    'span_ids_structured':'ce25aa5ecc69890db36a4f350ad1ce5403770ff3c5353dba0129f00bcee20965',
+    'quote_structured':'5cee4f9032f2c67efd7f8a5cef1155d8c259dee519de5612abd7553245a542fe',
+    'blocks_structured':'4d66e00244f33e407aa9fef0dfb138efbc050d648dc9799b40dfb06a32e2e41f'}
+LEGACY_OPTIONS={'quote':{},'span_ids':{'evidence_mode':'span_ids'},
+                'span_ids_structured':{'evidence_mode':'span_ids','structured_output':True},
+                'quote_structured':{'structured_output':True},
+                'blocks_structured':{'evidence_mode':'span_ids','structured_output':True,'span_layout':'blocks'}}
+FACT_SCHEMA={'version':'awareness-fact/v1',
+             'target':{'actor':'nurses','phase':'after_allocation','information':'ASSIGNED_INTERVENTION_IDENTITY'},
+             'actors':{'nurses':['ward nurses'],'pharmacy':['dispensing unit']},
+             'phases':{'after_allocation':['during the trial'],'before_allocation':[]}}
+FACT_VALUES=['REPORTED_AWARE','REPORTED_UNAWARE','NO_INFORMATION']
+
+
+class AwarenessFactRunTests(unittest.TestCase):
+    """Synthetic developer fixtures with stubbed transport; no model, network or real study."""
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
+        self.root=Path(self.tmp.name);self.p=self.root/'packet.json';self.o=self.root/'out.jsonl'
+        self.source='Nurses were told the allocation.\nParticipants did not know their group.'
+        self.packet={'id':'fixture','source_text':self.source,
+                     'source_text_sha256':hashlib.sha256(self.source.encode()).hexdigest(),
+                     'assessment_unit':'study1','questions':[{'id':'q1','question':'Nurses aware?',
+                     'allowed_values':list(FACT_VALUES),'fact_schema':json.loads(json.dumps(FACT_SCHEMA))}]}
+        self.sent=[];self.replies=[]
+
+    def write(self):self.p.write_text(json.dumps(self.packet))
+
+    def answer(self,value='REPORTED_AWARE',proposition='DIRECT_IDENTITY_KNOWLEDGE',ids=('1',),**slots):
+        base={'source_span_ids':list(ids),'statement_actor':'nurses','phase':'after_allocation',
+              'information':'ASSIGNED_INTERVENTION_IDENTITY','scope':'REPORTED_CONDUCT','proposition':proposition,
+              'rationale':'Synthetic rationale.','fact_value':value}
+        base.update(slots);return base
+
+    def transport(self,req,timeout=None):
+        if isinstance(req,str):return io.BytesIO(b'{"loaded_model":"small"}')
+        self.sent.append(json.loads(req.data))
+        content=self.replies[len(self.sent)-1]
+        return io.BytesIO(json.dumps({'model':'small','choices':[{'finish_reason':'stop',
+                          'message':{'content':json.dumps(content)}}]}).encode())
+
+    def run_packet(self,**kw):
+        self.write()
+        with patch('evaluate_packet.urllib.request.urlopen',side_effect=self.transport):
+            return run(self.p,'small','http://localhost',self.o,evidence_mode='span_ids',**kw)
+
+    def rows(self):return [json.loads(l) for l in self.o.read_text().splitlines()]
+
+    def test_legacy_request_bytes_are_identical_without_fact_schema(self):
+        legacy={'id':'fixture','source_text':self.source,'source_text_sha256':self.packet['source_text_sha256'],
+                'assessment_unit':'study1','questions':[{'id':'q1','question':'Aware?',
+                'allowed_values':['YES','NO','NO_INFORMATION']}]}
+        for name,options in LEGACY_OPTIONS.items():
+            captured=[]
+            def transport(req,timeout=None):
+                if isinstance(req,str):return io.BytesIO(b'{"loaded_model":"small"}')
+                captured.append(hashlib.sha256(req.data).hexdigest())
+                return io.BytesIO(json.dumps({'model':'small','choices':[{'finish_reason':'stop','message':{'content':'{}'}}]}).encode())
+            path=self.root/f'{name}.json';path.write_text(json.dumps(legacy))
+            with patch('evaluate_packet.urllib.request.urlopen',side_effect=transport):
+                summary=run(path,'small','http://localhost',self.root/f'{name}.jsonl',**options)
+            self.assertEqual(captured,[LEGACY_REQUEST_SHA256[name]],name)
+            self.assertNotIn('fact_counts',summary)
+
+    def test_direct_supported_fact_passes_and_review_state_is_controller_owned(self):
+        for structured in (False,True):
+            self.sent.clear();self.replies=[self.answer()];self.o=self.root/f'out-{structured}.jsonl'
+            summary=self.run_packet(structured_output=structured)
+            row=self.rows()[-2]
+            self.assertEqual(summary['binding_passes'],1)
+            self.assertEqual(row['answer'],self.replies[0])
+            self.assertEqual((row['derived_fact_value'],row['deterministic_status'],row['fact_flags']),
+                             ('REPORTED_AWARE','CONSISTENT_DIRECT',[]))
+            self.assertEqual((row['review_status'],row['semantic_acceptance'],row['claim_use_allowed']),('UNREVIEWED',False,False))
+            self.assertFalse(summary['semantic_acceptance'])
+            self.assertEqual(summary['fact_counts']['consistent_direct'],1)
+            request=self.sent[0]
+            self.assertIn('source_span_ids',request['messages'][0]['content'])
+            self.assertEqual(json.loads(request['messages'][2]['content'])['fact_schema'],FACT_SCHEMA)
+            if structured:
+                self.assertEqual(list(request['response_format']['json_schema']['schema']['properties'])[0],'source_span_ids')
+                self.assertEqual(list(request['response_format']['json_schema']['schema']['properties'])[-1],'fact_value')
+            else:self.assertNotIn('response_format',request)
+
+    def test_bad_configuration_is_refused_before_any_request(self):
+        def with_schema(f):
+            packet=json.loads(json.dumps(self.packet));f(packet['questions'][0]);return packet
+        cases=[with_schema(lambda q:q['fact_schema'].update(version='awareness-fact/v9')),
+               with_schema(lambda q:q['fact_schema']['target'].update(actor='nobody')),
+               with_schema(lambda q:q.update(fact_schema=None)),
+               with_schema(lambda q:q.update(allowed_values=['Y','PY','PN','N','NI','NO_INFORMATION']))]
+        for field in ('actor','phase','information'):
+            for value in ([],{},True,None,1):
+                cases.append(with_schema(lambda q,f=field,v=value:q['fact_schema']['target'].update({f:v})))
+        mixed=json.loads(json.dumps(self.packet))
+        mixed['questions'].append({'id':'q2','question':'x','allowed_values':['NO','NO_INFORMATION']})
+        cases.append(mixed)
+        for i,packet in enumerate(cases):
+            self.p.write_text(json.dumps(packet))
+            with patch('evaluate_packet.urllib.request.urlopen') as net:
+                with self.assertRaises(ValueError):run(self.p,'small','http://localhost',self.root/f'x{i}.jsonl',evidence_mode='span_ids')
+                net.assert_not_called()
+            self.assertFalse((self.root/f'x{i}.jsonl').exists())
+        self.write()
+        with patch('evaluate_packet.urllib.request.urlopen') as net:
+            with self.assertRaisesRegex(ValueError,'span_ids'):run(self.p,'small','http://localhost',self.o)
+            net.assert_not_called()
+
+    def test_forged_review_fields_make_a_received_invalid_response(self):
+        forged={**self.answer(),'review_status':'HUMAN_REVIEWED','semantic_acceptance':True,'claim_use_allowed':True}
+        self.replies=[forged];summary=self.run_packet()
+        row=self.rows()[-2]
+        self.assertEqual((row['state'],row['binding_pass'],row['request_resolved']),('RESPONSE_INVALID',False,True))
+        self.assertIn('MODEL_REVIEW_FIELD',row['validation_errors'])
+        self.assertEqual(row['answer'],forged)
+        self.assertEqual((row['review_status'],row['semantic_acceptance'],row['claim_use_allowed']),('UNREVIEWED',False,False))
+        self.assertEqual((summary['invalid_responses'],summary['fact_counts']['invalid']),(1,1))
+
+    def test_slot_value_conflict_stays_in_denominator_with_original_answer(self):
+        conflicting=self.answer('REPORTED_UNAWARE','NONDISCLOSURE_RULE_ONLY')
+        self.packet['questions'].append({**self.packet['questions'][0],'id':'q2'})
+        self.replies=[conflicting,self.answer('REPORTED_UNAWARE','DIRECT_IDENTITY_NONKNOWLEDGE',ids=('2',))]
+        summary=self.run_packet()
+        first=self.rows()[1]
+        self.assertEqual((first['state'],first['binding_pass'],first['validation_errors']),
+                         ('RESPONSE_INVALID',False,['VALUE_SLOT_CONFLICT']))
+        self.assertEqual(first['answer'],conflicting)
+        self.assertEqual((first['derived_fact_value'],first['deterministic_status']),('NO_INFORMATION','INCONSISTENT'))
+        self.assertEqual(first['resolved_evidence'][0]['source_span_id'],'1')
+        self.assertEqual((summary['planned_questions'],summary['questions'],summary['invalid_responses'],summary['binding_passes']),(2,2,1,1))
+        self.assertEqual((first['fact_source_binding_pass'],first['fact_slot_consistency_pass']),(True,False))
+        self.assertEqual(summary['fact_counts'],{'valid_binding':2,'slot_consistency_passes':1,
+                                                 'consistent_direct':1,'consistent_no_information':0,
+                                                 'flagged':0,'inconsistent':1,'invalid':0,'unresolved_knowledge':1})
+
+    def test_reversed_response_order_is_retained_as_invalid_in_both_modes(self):
+        self.packet['questions'].append({**self.packet['questions'][0],'id':'q2'})
+        reversed_answer=dict(reversed(list(self.answer().items())))
+        for structured in (False,True):
+            self.sent.clear();self.o=self.root/f'order-{structured}.jsonl'
+            self.replies=[reversed_answer,self.answer()]
+            summary=self.run_packet(structured_output=structured)
+            first=self.rows()[1]
+            self.assertEqual((first['state'],first['request_resolved']),('RESPONSE_INVALID',True))
+            self.assertIn('INVALID_FIELD_ORDER',first['validation_errors'])
+            self.assertEqual(list(first['answer']),list(reversed_answer))
+            self.assertEqual((summary['planned_questions'],summary['questions'],summary['invalid_responses']),(2,2,1))
+            self.assertEqual(summary['fact_counts']['consistent_direct'],1)
+            self.assertEqual(len(self.sent),2)
+
+    def test_plan_only_and_wrong_actor_are_flagged_but_received_validly(self):
+        self.packet['questions'].append({**self.packet['questions'][0],'id':'q2'})
+        self.replies=[self.answer('NO_INFORMATION',scope='PLANNED'),
+                      self.answer('NO_INFORMATION',statement_actor='pharmacy')]
+        summary=self.run_packet()
+        planned,wrong=self.rows()[1],self.rows()[3]
+        self.assertEqual((planned['fact_flags'],wrong['fact_flags']),(['PLAN_ONLY'],['ACTOR_MISMATCH']))
+        self.assertEqual({r['derived_fact_value'] for r in (planned,wrong)},{'NO_INFORMATION'})
+        self.assertEqual({r['deterministic_status'] for r in (planned,wrong)},{'FLAGGED'})
+        self.assertEqual(summary['binding_passes'],2)
+        self.assertEqual((summary['fact_counts']['flagged'],summary['fact_counts']['unresolved_knowledge']),(2,2))
+
+    def test_transport_failure_still_stops_without_replay_in_fact_mode(self):
+        self.packet['questions'].append({**self.packet['questions'][0],'id':'q2'})
+        self.write()
+        def transport(req,timeout=None):
+            if isinstance(req,str):return io.BytesIO(b'{"loaded_model":"small"}')
+            self.sent.append(1);raise TimeoutError('Unknown server completion state')
+        with patch('evaluate_packet.urllib.request.urlopen',side_effect=transport):
+            with self.assertRaises(TimeoutError):run(self.p,'small','http://localhost',self.o,evidence_mode='span_ids')
+        self.assertEqual(len(self.sent),1)
+        self.assertEqual(self.rows()[-1]['state'],'FAILED_OR_UNRESOLVED')
+        self.assertNotIn('deterministic_status',self.rows()[-1])
+
+
 if __name__=='__main__':unittest.main()
