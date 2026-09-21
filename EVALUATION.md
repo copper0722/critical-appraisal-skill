@@ -115,3 +115,52 @@ inputs. These results support algorithm/contract fidelity only. They do not
 measure whether a small model extracts correct study facts or supplies justified
 answers. Real trial appraisal, cluster/crossover variants, model calibration and
 held-out comparison remain unfinished. No human-quality or equivalence claim follows.
+
+## Real-trial development comparison (2026-09-21)
+
+A subsequent development run used one PISCES study family (DOI
+10.1056/NEJMoa2513032): the 10-page report, 18-page appendix, 88-page protocol/SAP
+bundle and a pinned current registry snapshot. This case is now training and
+course-development material; it cannot later become an untouched held-out case.
+
+The comparison planned 22 RoB 2 signalling questions per arm. The local
+Qwen3-VL-8B-Instruct-4bit workflow produced 10 answers before an HTTP 500
+out-of-memory failure. After terminal backend state was verified, one exact retry
+and the remaining questions yielded 22 eventual responses from 23 requests.
+The failure stays in the operational denominator. The high-end Fable 5.1/xhigh
+workflow produced 22 responses across five fresh domain contexts. Source,
+method, question messages and response schemas matched for all 22 questions,
+but the high-end workflow retained prior answers within each domain while the
+local workflow used stateless calls. This is a workflow development comparison,
+not an isolated model-capacity or equivalence experiment.
+
+Independent source-grounded AI adjudication found at least eight clear factual
+or polarity errors in the local responses and eight answers inconsistent with
+their own conditional branches. These counts overlap. Errors included reversing
+participant awareness despite a blinded-participant rationale, treating analysis
+inclusion as complete outcome follow-up, and assuming a plan preceded unblinding
+without the necessary chronology. Three domains were mechanically invalid.
+Forcing inactive responses to `NA` would not repair the upstream factual errors.
+
+Strict categorical agreement was 6/22; agreement is not accuracy. The high-end
+candidate handled the evidence and branches better but remains an unaccepted
+model candidate, not a human reference. Four material source ambiguities remain,
+including the analysis exclusions, missing outcomes and plan chronology. Similar
+censoring counts alone do not establish non-informative censoring. Neither arm
+has an accepted overall appraisal or a clinical-use claim.
+
+Follow-up fact-extraction development runs matched 6/7, 8/10 and 9/10
+controller/developer labels, respectively. In the final comparison, changing
+only the JSON schema field order to evidence, rationale, then value improved
+the observed labels on these reused cases. All four real-source facts matched,
+but one synthetic case still inferred that staff lacked knowledge merely because
+they were instructed not to disclose it. These are not full appraisals, human
+gold or held-out results. Automatic corrective rounds stopped after that run;
+further work requires a reviewed source-support design and fresh evaluation.
+
+The HTTP failure also motivated bounded preservation of the error body, status
+and planned question count. Three additional tests (57 total) and an installed
+CLI smoke check against a disposable HTTP 500 server verified evidence retention
+and stopping without replay or subsequent questions. Those checks establish
+transport behavior, not the truth of an appraisal. Source payloads and raw model
+request/response bundles are retained outside this public repository.
