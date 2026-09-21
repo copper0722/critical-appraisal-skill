@@ -1,11 +1,15 @@
 import hashlib
+import base64
 import io
 import json
 import tempfile
 import unittest
+import urllib.error
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from threading import Thread
 from pathlib import Path
 from unittest.mock import patch
-from evaluate_packet import run, source_spans
+from evaluate_packet import run, source_spans, http_error_evidence, HTTP_ERROR_BODY_LIMIT
 
 
 class PacketRunTests(unittest.TestCase):
@@ -138,6 +142,59 @@ class PacketRunTests(unittest.TestCase):
             with self.assertRaises(TimeoutError):run(self.p,'small','http://localhost',self.o)
         self.assertEqual(self.sent,1)
         self.assertEqual(json.loads(self.o.read_text().splitlines()[-1])['state'],'FAILED_OR_UNRESOLVED')
+
+    def test_http_failure_preserves_wire_body_and_stops_before_next_question(self):
+        body = b'{"error":"synthetic allocation failure"}'
+        received = []
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *_args): pass
+            def do_GET(self):
+                payload = b'{"loaded_model":"small"}'
+                self.send_response(200);self.end_headers();self.wfile.write(payload)
+            def do_POST(self):
+                received.append(json.loads(self.rfile.read(int(self.headers['Content-Length']))))
+                self.send_response(500);self.end_headers();self.wfile.write(body)
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        thread = Thread(target=server.serve_forever, daemon=True);thread.start()
+        self.packet['questions'].append({**self.packet['questions'][0], 'id':'second'})
+        self.p.write_text(json.dumps(self.packet))
+        try:
+            with self.assertRaises(urllib.error.HTTPError):
+                run(self.p, 'small', f'http://127.0.0.1:{server.server_port}', self.o)
+        finally:
+            server.shutdown();server.server_close();thread.join()
+        self.assertEqual(len(received), 1)
+        rows = [json.loads(line) for line in self.o.read_text().splitlines()]
+        self.assertEqual([row['state'] for row in rows], ['REQUEST_STARTED','FAILED_HTTP_RESPONSE'])
+        self.assertEqual(rows[-1]['question_id'], 'allocation')
+        self.assertEqual(rows[-1]['planned_questions'], 2)
+        evidence = rows[-1]['http_error']
+        self.assertEqual(evidence['status'], 500)
+        self.assertEqual(base64.b64decode(evidence['body_base64']), body)
+        self.assertEqual(evidence['captured_sha256'], hashlib.sha256(body).hexdigest())
+        self.assertFalse(evidence['body_truncated'])
+        self.assertFalse(evidence['backend_completion_confirmed'])
+        self.assertFalse(rows[-1]['request_resolved'])
+
+    def test_http_error_capture_is_bounded_and_hashes_only_captured_bytes(self):
+        body = b'x' * (HTTP_ERROR_BODY_LIMIT + 100)
+        error = urllib.error.HTTPError('http://fixture', 503, 'Unavailable', {}, io.BytesIO(body))
+        evidence = http_error_evidence(error)
+        captured = base64.b64decode(evidence['body_base64'])
+        self.assertEqual(captured, body[:HTTP_ERROR_BODY_LIMIT])
+        self.assertEqual(evidence['captured_bytes'], HTTP_ERROR_BODY_LIMIT)
+        self.assertEqual(evidence['captured_sha256'], hashlib.sha256(captured).hexdigest())
+        self.assertTrue(evidence['body_truncated'])
+
+    def test_http_status_is_retained_when_error_body_cannot_be_read(self):
+        class BrokenBody(io.BytesIO):
+            def read(self, _size=-1): raise TimeoutError('body unavailable')
+        error = urllib.error.HTTPError('http://fixture', 500, 'Failure', {}, BrokenBody())
+        evidence = http_error_evidence(error)
+        self.assertEqual(evidence['status'], 500)
+        self.assertEqual(evidence['body_read_error'], 'body unavailable')
+        self.assertNotIn('body_base64', evidence)
+        self.assertFalse(evidence['backend_completion_confirmed'])
 
     def test_structured_output_is_explicit_and_bound_to_this_question_and_source(self):
         def transport(req,timeout=None):

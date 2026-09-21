@@ -149,6 +149,13 @@ or remove its denominator. `FAILED_OR_UNRESOLVED` stops the run: inspect the exa
 original request/runtime before further calls. Neither schema compliance nor a
 valid source ID proves that the cited text supports every part of the answer.
 
+`FAILED_HTTP_RESPONSE` also stops without retry or later questions. It preserves
+the HTTP status and up to 64 KiB of error-body bytes, with a capture hash and an
+explicit truncation flag, so an endpoint failure can be diagnosed. A received
+error does not prove the backend stopped computing: `request_resolved` remains
+false until the operator reconciles the original request. Do not silently replay
+it or replace its failed observation with a later successful attempt.
+
 ### Deterministic quote locations
 
 Use `python3 scripts/evidence_anchors.py source.txt quote.txt --source-sha256 SHA`

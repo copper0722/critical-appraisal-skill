@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Run a bounded, source-hashed question packet on an already-loaded local model."""
 import argparse
+import base64
 import hashlib
 import json
 import time
 import urllib.request
+import urllib.error
 from pathlib import Path
 
 SYSTEM=('Answer one appraisal question about THIS document using only the supplied source. '
@@ -13,6 +15,26 @@ SYSTEM=('Answer one appraisal question about THIS document using only the suppli
         'Return only JSON with value, quote, and rationale. Choose value from allowed_values. '
         'quote must be an exact source substring supporting the answer, or empty for NO_INFORMATION. '
         'Keep rationale short. Do not output a quality score or claim final acceptance.')
+
+HTTP_ERROR_BODY_LIMIT = 65536
+
+
+def http_error_evidence(error):
+    """Preserve a bounded error response; backend completion is still unknown."""
+    evidence = {'status': error.code, 'backend_completion_confirmed': False}
+    try:
+        received = error.read(HTTP_ERROR_BODY_LIMIT + 1)
+        captured = received[:HTTP_ERROR_BODY_LIMIT]
+        evidence.update(body_base64=base64.b64encode(captured).decode('ascii'),
+                        body_preview=captured[:2048].decode('utf-8', errors='replace'),
+                        captured_bytes=len(captured),
+                        captured_sha256=hashlib.sha256(captured).hexdigest(),
+                        body_truncated=len(received) > HTTP_ERROR_BODY_LIMIT)
+    except Exception as exc:
+        evidence['body_read_error'] = str(exc)
+    finally:
+        error.close()
+    return evidence
 
 
 def validate_answer(response, question, model, text, spans, evidence_mode, max_evidence_spans):
@@ -128,7 +150,8 @@ def run(packet_path, model, base, output, stop_file=None, evidence_mode='quote',
                 payload['response_format']=answer_schema(q,spans,evidence_mode,max_evidence_spans)
             data=json.dumps(payload).encode();start=time.monotonic()
             row={'packet_id':p['id'],'packet_sha256':hashlib.sha256(raw).hexdigest(),
-                'question_id':q['id'],'state':'REQUEST_STARTED','request':payload,'evidence_mode':evidence_mode,
+                'question_id':q['id'],'planned_questions':len(questions),
+                'state':'REQUEST_STARTED','request':payload,'evidence_mode':evidence_mode,
                  'max_evidence_spans':max_evidence_spans,
                  'structured_output_requested':structured_output,
                  'span_layout':span_layout,'source_view_sha256':hashlib.sha256(source_view.encode()).hexdigest(),
@@ -147,6 +170,11 @@ def run(packet_path, model, base, output, stop_file=None, evidence_mode='quote',
                 row.update(answer=answer,binding_pass=not errors,validation_errors=errors,
                            resolved_evidence=evidence,request_resolved=True)
                 if errors:row['state']='RESPONSE_INVALID'
+            except urllib.error.HTTPError as exc:
+                row.update(state='FAILED_HTTP_RESPONSE', error=str(exc),
+                           elapsed_seconds=time.monotonic()-start,
+                           http_error=http_error_evidence(exc), request_resolved=False)
+                stream.write(json.dumps(row)+'\n');stream.flush();raise
             except Exception as exc:
                 row.update(state='STOPPED_BEFORE_SEND' if row['state']=='STOPPED_BEFORE_SEND' else 'FAILED_OR_UNRESOLVED',error=str(exc))
                 stream.write(json.dumps(row)+'\n');stream.flush();raise
